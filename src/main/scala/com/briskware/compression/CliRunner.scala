@@ -75,9 +75,9 @@ object CliRunner extends App
 
   val bytes: List[Byte] = textToCompress.getBytes(StandardCharsets.US_ASCII).toList
 
-  val (tree, bits) = encodeBytes(bytes)
+  val cData: CompressedData = encodeBytes(bytes)
 
-  val decodedBytes = decodeBits(bits, tree)
+  val decodedBytes = decodeBits(cData)
 
   log("Decompressed content follows below:")
 

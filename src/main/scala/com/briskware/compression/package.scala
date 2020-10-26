@@ -67,7 +67,7 @@ package object compression {
       // dump 8 bytes of binary per line to the console
       log {
         bits.map(b => if (b) 1 else 0)
-          .grouped(4).map(_.foldRight(0)((l, a) => a * 2 + l))
+          .grouped(4).map(_.foldLeft(0)((a, l) => a * 2 + l))
           .map(b => f"${b.toByte}%1X")
           .grouped(2).map(_.mkString)
           .grouped(16).map(_.mkString(" "))

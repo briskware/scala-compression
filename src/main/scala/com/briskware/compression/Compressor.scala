@@ -89,10 +89,10 @@ trait ShannonFano extends Compressor {
     logBits(bits)
     logHexBits(bits)
 
-    CompressorFileIO(tree, bits)
+    CompressedData(tree, bits)
   }
 
-  def decodeBits(bits: Bits, tree: Tree): List[Byte] = {
+  def decodeBits(cData: CompressedData): List[Byte] = {
     def _outer(_bits: Bits, _bytes: List[Byte]): List[Byte] = {
       def _inner(_bits: Bits, _current: Tree): (Bits, Byte) = {
         _current match {
@@ -109,11 +109,11 @@ trait ShannonFano extends Compressor {
       if (_bits.isEmpty)
         _bytes
       else {
-        val (_b, _byte) = _inner(_bits, tree)
+        val (_b, _byte) = _inner(_bits, cData.tree)
         _outer(_b, _bytes :+ _byte)
       }
     }
-    _outer(bits, Nil)
+    _outer(cData.bits, Nil)
   }
 
 }
