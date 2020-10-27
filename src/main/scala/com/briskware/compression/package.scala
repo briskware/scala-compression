@@ -50,7 +50,7 @@ package object compression {
       */
     protected def logBits(bits: Bits): Unit = {
       // dump 8 bytes of binary per line to the console
-      log {
+      debug {
         bits.map(b => if (b) '1' else '0')
           .grouped(8).map(_.mkString(""))
           .grouped(8).map(_.mkString(" "))
@@ -65,7 +65,7 @@ package object compression {
       */
     protected def logHexBits(bits: Bits): Unit = {
       // dump 8 bytes of binary per line to the console
-      log {
+      debug {
         bits.map(b => if (b) 1 else 0)
           .grouped(4).map(_.foldLeft(0)((a, l) => a * 2 + l))
           .map(b => f"${b.toByte}%1X")
@@ -75,22 +75,6 @@ package object compression {
       }
     }
   }
-
-
-  trait Logger {
-
-    /** logs argument
-      */
-    def log(msg: String): Unit
-  }
-
-  trait ConsoleLogger {
-
-    /** logs argument to Console using <code>Console.log</code>
-      */
-    def log(msg: String): Unit = Console.out.println(msg)
-  }
-
 }
 
 //EOF

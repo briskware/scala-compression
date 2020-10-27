@@ -8,7 +8,13 @@ import scala.annotation.tailrec
   *
   * @see https://users.cs.cf.ac.uk/Dave.Marshall/Multimedia/PDF/09_Basic_Compression.pdf
   */
-trait ShannonFano extends Compressor {
+object ShannonFano {
+  def apply()(implicit logger: Logger) = new ShannonFano {
+    override def _log(_msg: String, _level: LoggerLevel): Unit = logger._log(_msg, _level)
+  }
+}
+
+abstract class ShannonFano extends Compressor {
 
   private def makeGroups(bytes: List[Byte]): List[Leaf] = {
     val groups: List[Leaf] = {
@@ -29,7 +35,7 @@ trait ShannonFano extends Compressor {
       */
     } reverse
 
-    log(s"Number of unique byte values = ${groups.size}")
+    info(s"Number of unique byte values = ${groups.size}")
     groups
   }
 
@@ -49,7 +55,7 @@ trait ShannonFano extends Compressor {
         _inner(right, _code :+ true)
       case leaf@Leaf(_, _) =>
 
-        log(s"${_code.map(b => if (b) "1" else "0").mkString("")}\t= ${leaf}")
+        info(s"${_code.map(b => if (b) "1" else "0").mkString("")}\t= ${leaf}")
     }
 
     _inner(tree, Nil)
@@ -70,7 +76,7 @@ trait ShannonFano extends Compressor {
 
     val originalByteSize = bytes.size
 
-    log(s"Original ASCII text size = ${originalByteSize} (${originalByteSize * 8} bits)")
+    info(s"Original ASCII text size = ${originalByteSize} (${originalByteSize * 8} bits)")
 
     val tree = makeTree(makeGroups(bytes))
 
@@ -82,9 +88,9 @@ trait ShannonFano extends Compressor {
 
     val encodedBytesCount = bits.size / 8 + bits.size % 8
 
-    log(s"Encoded bit stream size is ${encodedBytesCount} bytes (${bits.size} bits)")
+    info(s"Encoded bit stream size is ${encodedBytesCount} bytes (${bits.size} bits)")
 
-    log(s"Deflated to ${100 * encodedBytesCount / originalByteSize}% of the original size.")
+    info(s"Deflated to ${100 * encodedBytesCount / originalByteSize}% of the original size.")
 
     logBits(bits)
     logHexBits(bits)
@@ -97,10 +103,10 @@ trait ShannonFano extends Compressor {
       def _inner(_bits: Bits, _current: Tree): (Bits, Byte) = {
         _current match {
           case Node(left, _) if !_bits.head =>
-            //          log(s".bit(${bits.size-_bits.size})=0: ${_current}")
+            trace(s".bit(${_bits.size-_bits.size})=0: ${_current}")
             _inner(_bits.tail, left)
           case Node(_, right) if _bits.head =>
-            //          log(s".bit(${bits.size-_bits.size})=1: ${_current}")
+            trace(s".bit(${_bits.size-_bits.size})=1: ${_current}")
             _inner(_bits.tail, right)
           case Leaf(value, _) =>
             (_bits, value)
