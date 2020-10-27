@@ -11,7 +11,7 @@ package object compression {
   sealed trait Tree
 
   case class Leaf(value: Byte, count: Int) extends Tree {
-    override def toString: String = f"Leaf('${value.toChar}'=$value%2X,$count)"
+    override def toString: String = f"Leaf('${value.toChar}'=0x$value%02X,$count)"
   }
 
   case class Node(left: Tree, right: Tree) extends Tree
