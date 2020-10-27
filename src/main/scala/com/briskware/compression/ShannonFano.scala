@@ -16,7 +16,15 @@ object ShannonFano {
 
 abstract class ShannonFano extends Compressor {
 
-  private def makeGroups(bytes: List[Byte]): List[Leaf] = {
+  /**
+    * Identify all unique bytes and group them with their associated frequency. An
+    * occurrence of a byte with it's frequency (number of times it appears in the input)
+    * is represented by Leaf. This function returns a sequence of such Leafs ordered by their
+    * descending frequency, i.e. most common Leafs come first.
+    * @param bytes
+    * @return
+    */
+  private def makeLeafs(bytes: List[Byte]): List[Leaf] = {
     val groups: List[Leaf] = {
       val x = bytes.groupBy(a => a).map {
         case (key, ls) => Leaf(key, ls.length)
@@ -39,10 +47,16 @@ abstract class ShannonFano extends Compressor {
     groups
   }
 
-  protected def makeTree(ls: List[Leaf]): Tree = {
+  /**
+    * Given a sequence of Leaves, this function assembles them in a binary tree according the
+    * Shannon-Fano algorithm. This recursively splits the list in half and constructs intermediate nodes.
+    * @param ls
+    * @return
+    */
+  protected def makeBinaryTree(ls: List[Leaf]): Tree = {
     if (ls.size > 1) {
       val (left, right) = ls.splitAt(ls.size / 2)
-      Node(makeTree(left), makeTree(right))
+      Node(makeBinaryTree(left), makeBinaryTree(right))
     } else {
       ls.head
     }
@@ -53,14 +67,19 @@ abstract class ShannonFano extends Compressor {
       case Node(left, right) =>
         _inner(left, _code :+ false)
         _inner(right, _code :+ true)
-      case leaf@Leaf(_, _) =>
-
-        debug(s"${_code.map(b => if (b) "1" else "0").mkString("")}\t= ${leaf}")
+      case leaf@Leaf(_, _) => debug(s"${_code.map(b => if (b) "1" else "0").mkString("")}\t= ${leaf}")
     }
 
     _inner(tree, Nil)
   }
 
+  /**
+    * Given the computed binary tree, this function constructs a map where each byte is mapped to a sequence
+    * of bits that encode it. The idea is that the number of encoding bits is most of the time less than 8,
+    * otherwise the compression would not provide any benefit.
+    * @param tree
+    * @return
+    */
   def encoder(tree: Tree): Map[Byte, Bits] = {
     def _inner(_tree: Tree, _code: List[Boolean], _map: Map[Byte, Bits]): Map[Byte, Bits] = _tree match {
       case Node(left, right) =>
@@ -72,34 +91,35 @@ abstract class ShannonFano extends Compressor {
     _inner(tree, Nil, Map.empty)
   }
 
-  def compress(bytes: List[Byte]): CompressedData = {
+  override def compress(bytes: List[Byte]): CompressedData = {
 
     val originalByteSize = bytes.size
 
-    info(s"Original stream size = ${originalByteSize} bytes (${originalByteSize * 8} bits)")
-
-    val tree = makeTree(makeGroups(bytes))
-
-    logEncodingTree(tree)
-
+    // make the binary encoding tree
+    val tree = makeBinaryTree(makeLeafs(bytes))
     val enc = encoder(tree)
 
+    // this type of compression simply emits the appropriate number of bits for each read byte,
+    // there is no dictionary matching or anything fancy at all here
     val bits = bytes.flatMap { b: Byte => enc(b) }
 
     val encodedBytesCount = bits.size / 8 + bits.size % 8
 
+    info(s"Original stream size = ${originalByteSize} bytes (${originalByteSize * 8} bits)")
     info(s"Compressed bit stream size is ${encodedBytesCount} bytes (${bits.size} bits)")
-
     info(s"Deflated to ${100 * encodedBytesCount / originalByteSize}% of the original size.")
-
+    logEncodingTree(tree)
     logBits(bits)
     logHexBits(bits)
 
     CompressedData(tree, bits)
   }
 
-  def decompress(cData: CompressedData): List[Byte] = {
+  override def decompress(cData: CompressedData): List[Byte] = {
+    // the _outer loops to the next decompressed byte  while the _inner finds the appropriate leaf given
+    // the required number of bits that direct it down the binary tree
     def _outer(_bits: Bits, _bytes: List[Byte]): List[Byte] = {
+      // consumes bits until it finds a leaf and returns the byte in it
       def _inner(_bits: Bits, _current: Tree): (Bits, Byte) = {
         _current match {
           case Node(left, _) if !_bits.head =>
