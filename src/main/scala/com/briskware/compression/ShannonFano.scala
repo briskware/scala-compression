@@ -63,6 +63,7 @@ abstract class ShannonFano extends Compressor {
   }
 
   def logEncodingTree(tree: Tree): Unit = {
+
     def _inner(_tree: Tree, _code: List[Boolean]): Unit = _tree match {
       case Node(left, right) =>
         _inner(left, _code :+ false)
@@ -81,6 +82,7 @@ abstract class ShannonFano extends Compressor {
     * @return
     */
   def encoder(tree: Tree): Map[Byte, Bits] = {
+
     def _inner(_tree: Tree, _code: List[Boolean], _map: Map[Byte, Bits]): Map[Byte, Bits] = _tree match {
       case Node(left, right) =>
         _inner(left, _code :+ false, _inner(right, _code :+ true, _map))
@@ -116,9 +118,11 @@ abstract class ShannonFano extends Compressor {
   }
 
   override def decompress(cData: CompressedData): List[Byte] = {
+
     // the _outer loops to the next decompressed byte  while the _inner finds the appropriate leaf given
     // the required number of bits that direct it down the binary tree
     def _outer(_bits: Bits, _bytes: List[Byte]): List[Byte] = {
+
       // consumes bits until it finds a leaf and returns the byte in it
       def _inner(_bits: Bits, _current: Tree): (Bits, Byte) = {
         _current match {
@@ -132,6 +136,7 @@ abstract class ShannonFano extends Compressor {
             (_bits, value)
         }
       }
+
       if (_bits.isEmpty)
         _bytes
       else {
@@ -139,6 +144,7 @@ abstract class ShannonFano extends Compressor {
         _outer(_b, _bytes :+ _byte)
       }
     }
+
     _outer(cData.bits, Nil)
   }
 
