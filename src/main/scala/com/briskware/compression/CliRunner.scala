@@ -36,11 +36,11 @@ object CliRunner extends App  {
 
   val serialisedTree = sWriter.getBuffer.toString
 
-  logger.info(s"Serialised tree (${serialisedTree.length} bits): ${serialisedTree}")
+  //0 0 165       166       0 168       0 167       169
+  //0 0 1x41      1x42      0 1x44      0 1x43      1x45
+  //0 0 101000001 101000010 0 101000100 0 101000011 101000101
 
-  //0 0 165 166 0 168 0 167 169
-  //0 0 141      142      0 144      0 143      145
-  //0 0 11000001 11000010 0 11000100 0 11000011 11000101
+  logger.info(s"Serialised tree (${serialisedTree.length} bits): ${serialisedTree}")
 
   val sReader = new StringReader(serialisedTree)
 
