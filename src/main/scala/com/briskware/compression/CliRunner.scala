@@ -9,7 +9,7 @@ import scala.util.{Success, Try}
 
 object CliRunner extends App  {
 
-  implicit val logger: Logger = Logger.getConsoleLogger(Logger.TRACE)
+  implicit val logger: Logger = Logger.getConsoleLogger(Logger.INFO)
 
   val compressor = ShannonFano()
 
@@ -17,17 +17,15 @@ object CliRunner extends App  {
 
   val bytes: List[Byte] = textToCompress.getBytes(StandardCharsets.US_ASCII).toList
 
-  val cData: CompressedData = compressor.encodeBytes(bytes)
+  val cData: CompressedData = compressor.compress(bytes)
 
-  val decodedBytes = compressor.decodeBits(cData)
-
-  logger.info("Decompressed content follows below:")
+  val decodedBytes = compressor.decompress(cData)
 
   val decompressedString = new java.lang.String(decodedBytes.toArray, "us-ascii") //decodedBytes.map(_.toChar).mkString("[", "", "]")
 
-  logger.info(decompressedString)
-
   assert(decompressedString == textToCompress, "strings don't match")
+
+  logger.info(s"Decompressed content matched with original: ${decompressedString}")
 
   val sWriter = new StringWriter()
 
@@ -38,7 +36,7 @@ object CliRunner extends App  {
 
   val serialisedTree = sWriter.getBuffer.toString
 
-  logger.info(s"Serialised tree: ${serialisedTree}")
+  logger.info(s"Serialised tree (${serialisedTree.length} bits): ${serialisedTree}")
 
   //0 0 165 166 0 168 0 167 169
   //0 0 141      142      0 144      0 143      145
@@ -53,7 +51,13 @@ object CliRunner extends App  {
   val fWriter = new StringWriter()
   io.writeAll(fWriter)
 
-  logger.info(s"All (lenght=${fWriter.getBuffer.toString.length}): ${fWriter.getBuffer.toString}")
+  val compressedBitSize = fWriter.getBuffer.toString.length
+
+  val compressedBytesCount = compressedBitSize / 8 + compressedBitSize % 8
+
+  logger.info(s"Overall size is ${compressedBytesCount} bytes (${compressedBitSize} bits): ${fWriter.getBuffer.toString}")
+
+  logger.info(s"Total compressed stream size is ${100*compressedBitSize/bytes.length/8}% of the original.")
 }
 
 // EOF

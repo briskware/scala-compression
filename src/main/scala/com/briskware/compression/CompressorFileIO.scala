@@ -55,7 +55,7 @@ class CompressorFileIO(data: CompressedData)(implicit logger: Logger) {
 
   protected def writeHeader(os: Writer): Try[Long] = {
     for {
-      marker <- Try(os.write("BWSFZ"))
+      marker <- Try(os.write(""/*"BWSFZ"*/))
     } yield {
       0L
     }

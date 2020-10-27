@@ -34,14 +34,14 @@ package object compression {
       * @param bytes
       * @return
       */
-    def encodeBytes(bytes: List[Byte]): CompressedData
+    def compress(bytes: List[Byte]): CompressedData
 
     /**
       * Decode, i.e. uncompress the passed CompressedData to the original byte sequence
       * @param data
       * @return
       */
-    def decodeBits(data: CompressedData): List[Byte]
+    def decompress(data: CompressedData): List[Byte]
 
     /**
       * Logs the passed bit stream as ones and zeroes as they appear in the bit stream.

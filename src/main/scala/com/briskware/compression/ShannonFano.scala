@@ -35,7 +35,7 @@ abstract class ShannonFano extends Compressor {
       */
     } reverse
 
-    info(s"Number of unique byte values = ${groups.size}")
+    debug(s"Number of unique byte values = ${groups.size}")
     groups
   }
 
@@ -55,7 +55,7 @@ abstract class ShannonFano extends Compressor {
         _inner(right, _code :+ true)
       case leaf@Leaf(_, _) =>
 
-        info(s"${_code.map(b => if (b) "1" else "0").mkString("")}\t= ${leaf}")
+        debug(s"${_code.map(b => if (b) "1" else "0").mkString("")}\t= ${leaf}")
     }
 
     _inner(tree, Nil)
@@ -72,11 +72,11 @@ abstract class ShannonFano extends Compressor {
     _inner(tree, Nil, Map.empty)
   }
 
-  def encodeBytes(bytes: List[Byte]): CompressedData = {
+  def compress(bytes: List[Byte]): CompressedData = {
 
     val originalByteSize = bytes.size
 
-    info(s"Original ASCII text size = ${originalByteSize} (${originalByteSize * 8} bits)")
+    info(s"Original stream size = ${originalByteSize} bytes (${originalByteSize * 8} bits)")
 
     val tree = makeTree(makeGroups(bytes))
 
@@ -88,7 +88,7 @@ abstract class ShannonFano extends Compressor {
 
     val encodedBytesCount = bits.size / 8 + bits.size % 8
 
-    info(s"Encoded bit stream size is ${encodedBytesCount} bytes (${bits.size} bits)")
+    info(s"Compressed bit stream size is ${encodedBytesCount} bytes (${bits.size} bits)")
 
     info(s"Deflated to ${100 * encodedBytesCount / originalByteSize}% of the original size.")
 
@@ -98,7 +98,7 @@ abstract class ShannonFano extends Compressor {
     CompressedData(tree, bits)
   }
 
-  def decodeBits(cData: CompressedData): List[Byte] = {
+  def decompress(cData: CompressedData): List[Byte] = {
     def _outer(_bits: Bits, _bytes: List[Byte]): List[Byte] = {
       def _inner(_bits: Bits, _current: Tree): (Bits, Byte) = {
         _current match {
